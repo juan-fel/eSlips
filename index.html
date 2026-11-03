@@ -45,7 +45,7 @@ input:focus,select:focus{border-color:var(--gold)}
 .alt button{background:none;border:0;color:var(--ink);font:600 .88rem Manrope,sans-serif;text-decoration:underline;text-decoration-color:var(--gold);text-underline-offset:3px;cursor:pointer;padding:0}
 .err{color:#B3261E;font-size:.85rem;margin:10px 0 0;min-height:1.2em}
 /* home */
-.head h1{font-size:2rem;margin:0}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.head h1{font-size:2rem;margin:0}.btn-line{flex:none;display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--gold);border-radius:12px;background:var(--surface);color:var(--ink);font:600 .95rem Manrope,sans-serif;cursor:pointer}.btn-line:hover{background:var(--gold-soft)}.hist-item{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px;padding:2px 16px}.hist-item summary{cursor:pointer;padding:12px 0;font-weight:600}.hist-item summary span{display:block;color:var(--muted);font-weight:400;font-size:.88rem}
 .head p{margin:4px 0 28px;color:var(--muted)}
 .head p strong{color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
@@ -97,7 +97,7 @@ input:focus,select:focus{border-color:var(--gold)}
   </section>
 
   <section id="vHome" class="hidden">
-    <div class="head"><h1>Branch Transaction</h1><p>Welcome, <strong id="wName">Guest</strong>. Pilih transaksi yang ingin kamu siapkan.</p></div>
+    <div class="head"><div><h1>Branch Transaction</h1><p>Welcome, <strong id="wName">Guest</strong>. Pilih transaksi yang ingin kamu siapkan.</p></div><button class="btn-line" id="hist" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Riwayat</button></div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -105,18 +105,23 @@ input:focus,select:focus{border-color:var(--gold)}
     <button class="back" id="back">&larr; Kembali ke Branch Transaction</button>
     <div class="card panel" id="panel"></div>
   </section>
+  <section id="vHist" class="hidden">
+    <button class="back" id="backH">&larr; Kembali ke Branch Transaction</button>
+    <div class="panel"><h1>Riwayat transaksi</h1><p>Transaksi yang pernah dibuat dari akun ini.</p><div id="histList"></div></div>
+  </section>
 </main>
 <script>
+var BANKS=["Mandiri","BRI","BNI","BCA","BTN","CIMB Niaga","Danamon","Permata","BSI","Bank lainnya"];
 var MENUS=[
- {id:"tarik",t:"Tarik Setor",d:"Setor atau tarik tunai",ic:'<path d="M4 8h16v10H4zM8 8V6h8v2M12 11v4M10 13l2 2 2-2"/>',f:[["Jenis transaksi","select",["Setor tunai","Tarik tunai"]],["Nomor rekening","text"],["Nama pemilik rekening","text"],["Nominal (Rp)","number"]]},
- {id:"kirim",t:"Kiriman Uang",d:"Transfer antar rekening/bank",ic:'<path d="M4 12h13M13 7l5 5-5 5"/>',f:[["Bank tujuan","text"],["Nomor rekening tujuan","text"],["Nama penerima","text"],["Nominal (Rp)","number"],["Berita (opsional)","text"]]},
- {id:"warkat",t:"Warkat",d:"Pencairan cek atau bilyet giro",ic:'<path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h5"/>',f:[["Jenis warkat","select",["Cek","Bilyet giro"]],["Nomor warkat","text"],["Nominal (Rp)","number"]]},
- {id:"prioritas",t:"Layanan Prioritas",d:"Reservasi antrean prioritas",ic:'<path d="M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7 9.6 9z"/>',f:[["Cabang","select",["Cabang Pusat","Cabang Medan Kota","Cabang Medan Plaza"]],["Tanggal kunjungan","date"],["Jam kunjungan","select",["09:00","10:00","11:00","13:00","14:00","15:00"]],["Keperluan","text"]]},
+ {id:"tarik",t:"Tarik Setor",d:"Setor atau tarik tunai",ic:'<path d="M4 8h16v10H4zM8 8V6h8v2M12 11v4M10 13l2 2 2-2"/>',f:[["Jenis transaksi","select",["Setor tunai","Tarik tunai"]],["Nomor rekening","angka",0,10,16],["Nama pemilik rekening","text"],["Nominal (Rp)","number"]]},
+ {id:"kirim",t:"Kiriman Uang",d:"Transfer antar rekening/bank",ic:'<path d="M4 12h13M13 7l5 5-5 5"/>',f:[["Nomor rekening pengirim","angka",0,10,16],["Bank tujuan","select",BANKS],["Nomor rekening tujuan","angka",0,10,16],["Nama penerima","text"],["Nominal (Rp)","number"],["Berita (opsional)","text"]]},
+ {id:"warkat",t:"Warkat",d:"Pencairan cek atau bilyet giro",ic:'<path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h5"/>',f:[["Jenis warkat","select",["Cek","Bilyet giro"]],["Bank penerbit warkat","select",BANKS],["Nomor rekening warkat","angka",0,10,16],["Nomor warkat","angka",0,6,12],["Tanggal buka warkat","tglLalu"],["Nominal (Rp)","number"]]},
+ {id:"prioritas",t:"Layanan Prioritas",d:"Reservasi antrean prioritas",ic:'<path d="M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7 9.6 9z"/>',f:[["Cabang","select",["Cabang Pusat","Cabang Medan Kota","Cabang Medan Plaza"]],["Tanggal kunjungan","kerja"],["Jam kunjungan","select",["09:00","10:00","11:00","13:00","14:00","15:00"]],["Keperluan","text"]]},
  {id:"valas",t:"Valuta Asing",d:"Beli atau jual mata uang asing",ic:'<circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.4-2.5 1.8-2.5.8-2.5 1.8 1 1.6 2.5 1.6 2.5-.6 2.5-1.6"/>',f:[["Jenis transaksi","select",["Beli valas","Jual valas"]],["Mata uang","select",["USD","EUR","SGD","JPY","AUD"]],["Jumlah","number"]]},
- {id:"va",t:"Setoran Virtual Account",d:"Setor ke nomor virtual account",ic:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16M8 15h3"/>',f:[["Nomor virtual account","text"],["Nama penyetor","text"],["Nominal (Rp)","number"]]}
+ {id:"va",t:"Setoran Virtual Account",d:"Setor ke nomor virtual account",ic:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16M8 15h3"/>',f:[["Nomor virtual account","angka",0,8,20],["Nama penyetor","text"],["Nominal (Rp)","number"]]}
 ];
 var $=function(i){return document.getElementById(i)},mode="login",authed=false;
-function show(v){["vLogin","vHome","vForm"].forEach(function(x){$(x).classList.toggle("hidden",x!==v)});$("who").classList.toggle("hidden",!authed);window.scrollTo(0,0)}
+function show(v){["vLogin","vHome","vForm","vHist"].forEach(function(x){$(x).classList.toggle("hidden",x!==v)});$("who").classList.toggle("hidden",!authed);window.scrollTo(0,0)}
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
 /* login / daftar */
 $("toggle").onclick=function(){mode=mode==="login"?"daftar":"login";var d=mode==="daftar";
@@ -137,10 +142,24 @@ $("loginForm").onsubmit=function(e){e.preventDefault();
  var a=acc[k];
  if(!a){msg("Akun belum terdaftar. Silakan daftar dulu.");return}
  if(a.pw!==p||a.nama.toLowerCase()!==n.toLowerCase()){msg("Nama, No. HP/email, atau password tidak cocok.");return}
- msg("");authed=true;$("wName").textContent=a.nama;$("hName").textContent=a.nama;show("vHome")};
+ msg("");authed=true;curK=k;$("wName").textContent=a.nama;$("hName").textContent=a.nama;show("vHome")};
 $("out").onclick=function(){authed=false;$("loginForm").reset();msg("");show("vLogin")};
 $("logo").onclick=function(){show(authed?"vHome":"vLogin")};
 $("back").onclick=function(){show("vHome")};
+var curK="",memH={};
+function today(){var d=new Date(),m=d.getMonth()+1,s=d.getDate();return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(s<10?"0":"")+s}
+function weekend(v){var d=new Date(v+"T00:00:00").getDay();return d===0||d===6}
+function getHist(){try{return JSON.parse(localStorage.getItem("eslips_hist")||"{}")}catch(e){return memH}}
+function addHist(h){var a=getHist();(a[curK]=a[curK]||[]).unshift(h);memH=a;try{localStorage.setItem("eslips_hist",JSON.stringify(a))}catch(e){}}
+function showHist(){var L=$("histList");L.textContent="";var a=getHist()[curK]||[];
+ if(!a.length)L.appendChild(el("p","","Belum ada transaksi. Buat transaksi dari menu Branch Transaction."));
+ a.forEach(function(h){var d=el("details","hist-item"),s=el("summary","",h.kode+" · "+h.menu);
+  s.appendChild(el("span","",new Date(h.t).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})));d.appendChild(s);
+  var w=el("div","result"),ul=el("ul");w.style.padding="0 0 8px";
+  h.vals.forEach(function(v){if(!v[1])return;var li=el("li");li.appendChild(el("span","",v[0]));li.appendChild(el("span","",v[1]));ul.appendChild(li)});
+  w.appendChild(ul);d.appendChild(w);L.appendChild(d)})}
+$("hist").onclick=function(){showHist();show("vHist")};
+$("backH").onclick=function(){show("vHome")};
 /* home */
 MENUS.forEach(function(m){var b=el("button","tile");b.type="button";
  var ic=el("span","ic");ic.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+m.ic+'</svg>';
@@ -149,18 +168,23 @@ MENUS.forEach(function(m){var b=el("button","tile");b.type="button";
 function openForm(m){var p=$("panel");p.textContent="";p.appendChild(el("h1","",m.t));p.appendChild(el("p","",m.d));
  var f=el("form");f.noValidate=true;
  m.f.forEach(function(x,i){var id="f"+i,l=el("label","",x[0]);l.htmlFor=id;f.appendChild(l);var c;
-  if(x[1]==="select"){c=el("select");x[2].forEach(function(o){var op=el("option","",o);c.appendChild(op)})}else{c=el("input");c.type=x[1]}
+  if(x[1]==="select"){c=el("select");x[2].forEach(function(o){var op=el("option","",o);c.appendChild(op)})}else{c=el("input");var tp=x[1];
+   if(tp==="angka"){c.type="text";c.inputMode="numeric";c.maxLength=x[4];c.placeholder=x[3]+"–"+x[4]+" digit angka";c.oninput=function(){c.value=c.value.replace(/\D/g,"")}}
+   else if(tp==="kerja"){c.type="date";c.min=today();c.onchange=function(){if(c.value&&weekend(c.value)){c.value="";er.textContent="Layanan prioritas hanya tersedia Senin–Jumat. Pilih hari lain."}else er.textContent=""}}
+   else if(tp==="tglLalu"){c.type="date";c.max=today()}
+   else c.type=tp}
   c.id=id;f.appendChild(c)});
  var er=el("p","err");er.setAttribute("role","alert");f.appendChild(er);
  var s=el("button","btn",m.id==="prioritas"?"Buat reservasi":"Buat kode transaksi");s.type="submit";f.appendChild(s);
- f.onsubmit=function(e){e.preventDefault();var vals=[],ok=true;
-  m.f.forEach(function(x,i){var v=$("f"+i).value.trim();if(!v&&x[0].indexOf("opsional")<0)ok=false;vals.push([x[0].replace(" (opsional)",""),v])});
+ f.onsubmit=function(e){e.preventDefault();var vals=[],ok=true,bad="";
+  m.f.forEach(function(x,i){var v=$("f"+i).value.trim();if(!v&&x[0].indexOf("opsional")<0)ok=false;if(v&&x[1]==="angka"&&(!/^\d+$/.test(v)||v.length<x[3]||v.length>x[4]))bad=x[0]+" harus berupa angka "+x[3]+"–"+x[4]+" digit.";if(v&&x[1]==="kerja"&&weekend(v))bad="Layanan prioritas hanya tersedia Senin–Jumat.";if(v&&x[1]==="tglLalu"&&v>today())bad="Tanggal buka warkat tidak boleh di masa depan.";if(v&&x[1]==="number"&&Number(v)<=0)bad=x[0]+" harus lebih dari 0.";vals.push([x[0].replace(" (opsional)",""),v])});
   if(!ok){er.textContent="Lengkapi semua kolom yang wajib diisi.";return}
+  if(bad){er.textContent=bad;return}
   done(m,vals)};
  p.appendChild(f);show("vForm")}
 function done(m,vals){var p=$("panel");p.textContent="";var r=el("div","result");
  r.appendChild(el("p","",m.id==="prioritas"?"Reservasi tersimpan. Tunjukkan kode ini saat tiba di cabang.":"Transaksi siap. Tunjukkan kode ini ke teller."));
- r.appendChild(el("div","code","ESL-"+String(Math.floor(100000+Math.random()*900000))));
+ var kode="ESL-"+Math.floor(100000+Math.random()*900000);addHist({kode:kode,menu:m.t,t:Date.now(),vals:vals});r.appendChild(el("div","code",kode));
  var ul=el("ul");vals.forEach(function(v){if(!v[1])return;var li=el("li");li.appendChild(el("span","",v[0]));li.appendChild(el("span","",v[1]));ul.appendChild(li)});
  r.appendChild(ul);var b=el("button","btn","Kembali ke Branch Transaction");b.type="button";b.onclick=function(){show("vHome")};r.appendChild(b);p.appendChild(r);window.scrollTo(0,0)}
 </script>
