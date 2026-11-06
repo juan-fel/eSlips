@@ -75,6 +75,7 @@ input:focus,select:focus{border-color:var(--gold)}
 @media (max-width:820px){.login{grid-template-columns:1fr;gap:28px;min-height:0}.pitch{display:none}main{padding:20px 16px 40px}header{padding:10px 16px}}
 @media (max-width:520px){.grid{gap:12px}.tile{flex-direction:column;align-items:flex-start;gap:12px;padding:16px;font-size:.95rem;min-height:132px}.tile small{display:none}.head h1{font-size:1.6rem}.card{padding:24px 18px}.back{padding:8px 0}}
 .kurs{margin:18px 0 6px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.hfil{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin:6px 0 16px}.hfil label{margin:10px 0 4px}.hfil .btn-line{grid-column:1/-1;justify-content:center;margin-top:12px;min-height:42px}
 .kurs .sumh{margin:0 0 4px}.kurs small{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 10px}
 .kurs table{width:100%;border-collapse:collapse;font-size:.9rem}
 .kurs th{font-weight:600;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -125,7 +126,14 @@ input:focus,select:focus{border-color:var(--gold)}
   </section>
   <section id="vHist" class="hidden">
     <button class="back" id="backH">&larr; Kembali ke Branch Transaction</button>
-    <div class="panel"><h1>Riwayat transaksi</h1><p>Transaksi yang pernah dibuat dari akun ini.</p><div id="histList"></div></div>
+    <div class="panel"><h1>Riwayat transaksi</h1><p>Transaksi yang pernah dibuat dari akun ini.</p><div class="hfil">
+      <div><label for="fJenis">Jenis transaksi</label><select id="fJenis"><option value="">Semua jenis</option></select></div>
+      <div><label for="fStatus">Status</label><select id="fStatus"><option value="">Semua status</option></select></div>
+      <div><label for="fDari">Dari tanggal</label><input type="date" id="fDari"></div>
+      <div><label for="fSampai">Sampai tanggal</label><input type="date" id="fSampai"></div>
+      <button type="button" class="btn-line" id="fReset">Reset filter</button>
+    </div>
+    <div id="histList"></div><p id="histEmpty" class="hidden">Tidak ada transaksi yang cocok dengan filter.</p></div>
   </section>
 </main>
 <script>
@@ -176,14 +184,23 @@ function setBadge(b,i){b.textContent=STAT[i][0];b.className="badge "+STAT[i][1]}
 function weekend(v){var d=new Date(v+"T00:00:00").getDay();return d===0||d===6}
 function getHist(){try{return JSON.parse(localStorage.getItem("eslips_hist")||"{}")}catch(e){return memH}}
 function addHist(h){if(guest)return;var a=getHist();(a[curK]=a[curK]||[]).unshift(h);memH=a;try{localStorage.setItem("eslips_hist",JSON.stringify(a))}catch(e){}}
-function showHist(){var L=$("histList");L.textContent="";var a=getHist()[curK]||[],BG=[];clearInterval(tick);tick=setInterval(function(){BG.forEach(function(p){setBadge(p[0],statusOf(p[1].a))})},2000);
+function showHist(){var L=$("histList");L.textContent="";var a=getHist()[curK]||[],BG=[];clearInterval(tick);tick=setInterval(function(){BG.forEach(function(p){setBadge(p[0],statusOf(p[1].a))});histFilter()},2000);
  if(!a.length)L.appendChild(el("p","","Belum ada transaksi. Buat transaksi dari menu Branch Transaction."));
  a.forEach(function(h,hi){var d=el("details","hist-item"),s=el("summary","",h.kode+" · "+h.menu);
-  s.appendChild(el("span","",new Date(h.t).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})));var bg=el("b","badge");setBadge(bg,statusOf(h.a));s.appendChild(bg);BG.push([bg,h]);d.appendChild(s);
+  s.appendChild(el("span","",new Date(h.t).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})));var bg=el("b","badge");setBadge(bg,statusOf(h.a));s.appendChild(bg);BG.push([bg,h]);d._h=h;d.appendChild(s);
   var w=el("div","result"),ul=el("ul");w.style.padding="0 0 8px";
   h.vals.forEach(function(v){if(!v[1])return;var li=el("li");li.appendChild(el("span","",v[0]));li.appendChild(el("span","",v[1]));ul.appendChild(li)});
-  w.appendChild(ul);if(!h.a){var ab=el("button","btn","Saya sudah tiba, ambil antrian");ab.type="button";ab.onclick=function(){arrive(hi)};w.appendChild(ab)}d.appendChild(w);L.appendChild(d)})}
-$("hist").onclick=function(){showHist();show("vHist")};
+  w.appendChild(ul);if(!h.a){var ab=el("button","btn","Saya sudah tiba, ambil antrian");ab.type="button";ab.onclick=function(){arrive(hi)};w.appendChild(ab)}d.appendChild(w);L.appendChild(d)});histFilter()}
+function histFilter(){var j=$("fJenis").value,st=$("fStatus").value,d1=$("fDari").value,d2=$("fSampai").value,
+ t1=d1?new Date(d1+"T00:00:00").getTime():0,t2=d2?new Date(d2+"T23:59:59").getTime():Infinity,n=0,c=0,L=$("histList").children;
+ for(var i=0;i<L.length;i++){var h=L[i]._h;if(!h)continue;c++;var ok=(!j||h.menu===j)&&(st===""||statusOf(h.a)===Number(st))&&h.t>=t1&&h.t<=t2;L[i].classList.toggle("hidden",!ok);if(ok)n++}
+ $("histEmpty").classList.toggle("hidden",!(c&&!n))}
+function histReset(){["fJenis","fStatus","fDari","fSampai"].forEach(function(x){$(x).value=""})}
+MENUS.forEach(function(m){var o=el("option","",m.t);o.value=m.t;$("fJenis").appendChild(o)});
+STAT.forEach(function(x,i){var o=el("option","",x[0]);o.value=i;$("fStatus").appendChild(o)});
+["fJenis","fStatus","fDari","fSampai"].forEach(function(x){$(x).onchange=$(x).oninput=histFilter});
+$("fReset").onclick=function(){histReset();histFilter()};
+$("hist").onclick=function(){histReset();showHist();show("vHist")};
 $("backH").onclick=function(){show("vHome")};
 /* home */
 MENUS.forEach(function(m){var b=el("button","tile");b.type="button";
