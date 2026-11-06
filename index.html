@@ -81,8 +81,8 @@ input:focus,select:focus{border-color:var(--gold)}
 .kurs td{text-align:right;padding:8px 0;border-bottom:1px solid var(--line)}
 .kurs th:first-child,.kurs td:first-child{text-align:left}
 .kurs td:first-child b{font-family:Sora,sans-serif}.kurs td:first-child span{display:block;color:var(--muted);font-size:.78rem}
-.kurs .est{margin:6px 0 0;padding:10px 12px;border-radius:10px;background:var(--gold-soft);font-weight:600;font-size:.92rem}
-.kurs .est small{font-weight:400;margin:2px 0 0}
+.est{margin-top:10px;margin:6px 0 0;padding:10px 12px;border-radius:10px;background:var(--gold-soft);font-weight:600;font-size:.92rem}
+.est small{display:block;color:var(--muted);font-size:.8rem;font-weight:400;margin:2px 0 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -135,7 +135,7 @@ var MENUS=[
  {id:"kirim",t:"Kiriman Uang",d:"Transfer antar rekening/bank",ic:'<path d="M4 12h13M13 7l5 5-5 5"/>',f:[["Nomor rekening pengirim","angka",0,10,16],["Bank tujuan","select",BANKS],["Nama bank tujuan (ketik manual)","text",0,0,0,[[1,"Bank lainnya"]]],["Nomor rekening tujuan","angka",0,10,16],["Nama penerima","text"],["Nominal (Rp)","number"],["Berita (opsional)","text"]]},
  {id:"warkat",t:"Warkat",d:"Pencairan cek atau bilyet giro",ic:'<path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h5"/>',f:[["Jenis warkat","select",["Cek","Bilyet giro"]],["Bank penerbit warkat","select",BANKS],["Nama bank penerbit (ketik manual)","text",0,0,0,[[1,"Bank lainnya"]]],["Nomor rekening warkat","angka",0,10,16],["Nomor warkat","angka",0,6,12],["Tanggal buka warkat","tglLalu"],["Nominal (Rp)","number"]]},
  {id:"prioritas",t:"Layanan Prioritas",d:"Reservasi antrean prioritas",ic:'<path d="M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7 9.6 9z"/>',f:[["Nomor rekening nasabah","angka",0,10,16],["Cabang","select",["Cabang Pusat","Cabang Medan Kota","Cabang Medan Plaza"]],["Tanggal kunjungan","kerja"],["Jam kunjungan","select",["09:00","10:00","11:00","13:00","14:00","15:00"]],["Keperluan","text"]]},
- {id:"valas",t:"Valuta Asing",d:"Beli atau jual mata uang asing",ic:'<circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.4-2.5 1.8-2.5.8-2.5 1.8 1 1.6 2.5 1.6 2.5-.6 2.5-1.6"/>',f:[["Jenis transaksi","select",["Beli valas","Jual valas"]],["Mata uang","select",["USD","EUR","CNY","SGD","JPY","AUD"]],["Jumlah","number"]]},
+ {id:"valas",t:"Valuta Asing",d:"Beli atau jual mata uang asing",ic:'<circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.4-2.5 1.8-2.5.8-2.5 1.8 1 1.6 2.5 1.6 2.5-.6 2.5-1.6"/>',f:[["Jenis transaksi","select",["Beli valas","Jual valas"]],["Mata uang","select",["USD","EUR","CNY","AUD","SGD","JPY","GBP","MYR","SAR"]],["Isi jumlah dalam","select",["Valas (sesuai mata uang)","Rupiah"]],["Jumlah","number"]]},
  {id:"va",t:"Setoran Virtual Account",d:"Setor ke nomor virtual account",ic:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16M8 15h3"/>',f:[["Nomor virtual account","angka",0,8,20],["Nama penyetor","text"],["Nominal (Rp)","number"]]}
 ];
 var $=function(i){return document.getElementById(i)},mode="login",authed=false;
@@ -206,29 +206,31 @@ function openForm(m){var p=$("panel");p.textContent="";p.appendChild(el("h1","",
   m.f.forEach(function(x,i){if(!vis(x))return;var v=$("f"+i).value.trim();if(!v&&x[0].indexOf("opsional")<0)ok=false;if(v&&x[1]==="angka"&&(!/^\d+$/.test(v)||v.length<x[3]||v.length>x[4]))bad=x[0]+" harus berupa angka "+(x[3]===x[4]?x[3]:x[3]+"–"+x[4])+" digit.";if(v&&x[1]==="kerja"&&weekend(v))bad="Layanan prioritas hanya tersedia Senin–Jumat.";if(v&&x[1]==="tglLalu"&&v>today())bad="Tanggal buka warkat tidak boleh di masa depan.";if(v&&x[1]==="number"&&Number(v)<=0)bad=x[0]+" harus lebih dari 0.";vals.push([x[0].replace(" (opsional)",""),v])});
   if(!ok){er.textContent="Lengkapi semua kolom yang wajib diisi.";return}
   if(!bad&&m.id==="prioritas"&&vals[0][1].slice(0,2)!=="88")bad="Nomor rekening ini bukan nasabah prioritas, sehingga belum bisa memakai Layanan Prioritas.";if(bad){er.textContent=bad;return}
-  if(m.id==="prioritas")vals.splice(1,0,["Status nasabah","Prioritas"]);done(m,vals)};
- if(m.id==="valas")p.appendChild(kursBox());p.appendChild(f);show("vForm")}
+  if(m.id==="prioritas")vals.splice(1,0,["Status nasabah","Prioritas"]);if(m.id==="valas"){var rp=vals[2][1].indexOf("Rupiah")===0,h=vHit(vals[0][1],vals[1][1],rp,Number(vals[3][1]));vals.splice(2,2,[rp?"Jumlah (Rp)":"Jumlah ("+vals[1][1]+")",vals[3][1]],["Kurs dipakai","Rp "+fmt(h.rate,2)+(h.n>1?" per 100":"")],[rp?"Estimasi "+vals[1][1]:"Estimasi Rupiah",vTxt(vals[1][1],rp,h)])}done(m,vals)};
+ if(m.id==="valas")p.appendChild(kursBox());if(m.id==="valas")valasLive(f,W,CTL);p.appendChild(f);show("vForm")}
 /* kurs valas: Kurs Transaksi Bank Indonesia, berlaku 27 Oktober 2026 (Rp per 1 unit; JPY per 100) */
 var KURS=[["USD","Dolar AS",18206.58,18025.42],["EUR","Euro",20402.29,20195.68],["CNY","Yuan Tiongkok",2730.44,2702.99],["AUD","Dolar Australia",12793.76,12662.86],["SGD","Dolar Singapura",14231.67,14088.96],["JPY","Yen Jepang (per 100)",11587.69,11469.47],["GBP","Poundsterling",24323.99,24076.55],["MYR","Ringgit Malaysia",4458.03,4409.35],["SAR","Riyal Saudi",4851.34,4802.30]];
 function fmt(n,d){return n.toLocaleString("id-ID",{minimumFractionDigits:d,maximumFractionDigits:d})}
-function kursBox(){var b=el("div","kurs"),u=KURS[0];
+function kursBox(){var b=el("div","kurs");
  b.appendChild(el("p","sumh","Kurs valuta asing"));
  b.appendChild(el("small","","Kurs Transaksi Bank Indonesia, berlaku 27 Oktober 2026. Beli = bank membeli valas dari nasabah, Jual = bank menjual valas ke nasabah.")); 
  var t=el("table"),h=el("tr");["Mata uang","Kurs beli (Rp)","Kurs jual (Rp)"].forEach(function(x){h.appendChild(el("th","",x))});t.appendChild(h);
  KURS.forEach(function(k){var r=el("tr"),c=el("td"),bb=el("b","",k[0]);c.appendChild(bb);c.appendChild(el("span","",k[1]));r.appendChild(c);r.appendChild(el("td","",fmt(k[3],2)));r.appendChild(el("td","",fmt(k[2],2)));t.appendChild(r)});
  b.appendChild(t);
- b.appendChild(el("p","sumh","Estimasi penukaran (USD)")).style.marginTop="16px";
- var l1=el("label","","Tukar Rupiah (Rp) ke USD"),i1=el("input"),o1=el("p","est");
- l1.htmlFor=i1.id="kx1";i1.type="number";i1.min="0";i1.value="10000000";
- var l2=el("label","","Tukar USD ke Rupiah (Rp)"),i2=el("input"),o2=el("p","est");
- l2.htmlFor=i2.id="kx2";i2.type="number";i2.min="0";i2.value="100";
- var calc=function(){var r=Number(i1.value)||0,d=Number(i2.value)||0;
-  o1.textContent="Rp "+fmt(r,0)+" ≈ USD "+fmt(r/u[2],2);o1.appendChild(el("small","","Memakai kurs jual USD Rp "+fmt(u[2],2)));
-  o2.textContent="USD "+fmt(d,2)+" ≈ Rp "+fmt(d*u[3],0);o2.appendChild(el("small","","Memakai kurs beli USD Rp "+fmt(u[3],2)))};
- i1.oninput=i2.oninput=calc;calc();
- [l1,i1,o1,l2,i2,o2].forEach(function(x){b.appendChild(x)});
- b.appendChild(el("small","","Estimasi saja; nominal akhir mengikuti kurs yang berlaku di cabang saat transaksi.")).style.margin="10px 0 0";
  return b}
+function vKurs(c){for(var i=0;i<KURS.length;i++)if(KURS[i][0]===c)return KURS[i]}
+function vHit(jenis,c,rp,amt){var k=vKurs(c),n=c==="JPY"?100:1,rate=jenis==="Beli valas"?k[2]:k[3];return{rate:rate,n:n,out:rp?amt/rate*n:amt*rate/n}}
+function vTxt(c,rp,h){return rp?c+" "+fmt(h.out,2):"Rp "+fmt(h.out,0)}
+function valasLive(f,W,C){var info=el("p","est"),res=el("p","est");
+ f.insertBefore(info,W[1].nextSibling);f.insertBefore(res,W[3].nextSibling);
+ var calc=function(){var j=C[0].value,c=C[1].value,rp=C[2].selectedIndex===1,amt=Number(C[3].value)||0,h=vHit(j,c,rp,amt);
+  W[3].firstChild.textContent=rp?"Jumlah Rupiah (Rp)":"Jumlah "+c;
+  info.textContent="Kurs "+(j==="Beli valas"?"jual":"beli")+" "+c+": Rp "+fmt(h.rate,2)+(h.n>1?" per 100":"");
+  info.appendChild(el("small","",j==="Beli valas"?"Kurs saat nasabah membeli valas dari bank.":"Kurs saat nasabah menjual valas ke bank."));
+  res.textContent="";
+  if(amt>0){res.textContent=(rp?"Estimasi "+c+": ":"Estimasi Rupiah: ")+vTxt(c,rp,h);res.appendChild(el("small","","Estimasi saja; nominal akhir mengikuti kurs di cabang."))}
+  else res.textContent="Estimasi muncul setelah jumlah diisi."};
+ f.addEventListener("input",calc);f.addEventListener("change",calc);calc()}
 function done(m,vals){var p=$("panel");p.textContent="";var r=el("div","result");
  r.appendChild(el("p","",m.id==="prioritas"?"Reservasi tersimpan. Tunjukkan kode ini saat tiba di cabang.":"Transaksi siap. Tunjukkan kode ini ke teller."));
  var kode="ESL-"+Math.floor(100000+Math.random()*900000),t0=Date.now();addHist({kode:kode,menu:m.t,t:t0,vals:vals});r.appendChild(el("div","code",kode));var st=el("b","badge");r.appendChild(st);setBadge(st,0);r.appendChild(el("p","hint",guest?'Tunjukkan kode ini ke teller di cabang.':'Saat tiba di cabang, buka Riwayat lalu ketuk Saya sudah tiba untuk mengambil antrian.'));r.appendChild(el("p","sumh","Ringkasan "+(m.id==="prioritas"?"reservasi":"transaksi")));
